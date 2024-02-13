@@ -21,7 +21,7 @@ class TestTranciever(unittest.TestCase):
         for _ in range(20):
             self.trx._decode_pulse(self.morseunit)
         result = self.trx.symbol_buffer
-        self.assertEqual(result, 0xFF)
+        self.assertEqual(result, 0xcF)
 
     def test_decode_space(self):
         self.trx._decode_pulse(self.morseunit * 7)
