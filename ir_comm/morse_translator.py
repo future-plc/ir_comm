@@ -1,45 +1,60 @@
 import time
 from ir_comm.morse_dict import morse_dict, char_dict
 import string
-valid_chars = string.ascii_lowercase + string.digits + "\n"
-valid_morse = list(char_dict).append(";", " ")
+valid_chars = list(morse_dict)
+valid_morse = list(char_dict)
 
-DELIMITER = ";"
-class MorseString():
-    def __init__(self, string: str) -> None:
-        self._string = string
+try:
+    from typing import Union
+except ImportError:
+    pass
 
-    def
 class MorseTranslator():
     def __init__(self):
         self._asciibuf = ""
-        pass
 
-    def text_to_morse(self, text: str) -> str:
-        result = ""
+    def text_to_morse(self, text: str) -> list[str]:
+        result = []
         for char in text:
             char = char.lower()
-            if char not in valid_chars:
-                break
-            if char == "\n":
-                return result
-            if char == " ":
-                result += char + DELIMITER
-            result += morse_dict[char] + DELIMITER
+            if char in valid_chars:
+                result.append(morse_dict[char])
+            elif char == " " or char == "\n" and len(result) > 1:
+                result.append(char)
+
+        if len(result) == 0:
+            return []
+        if result[0] in string.whitespace and len(result) == 1:
+            result = []
         return result
 
-    def morse_to_char(self, morse: str) -> str:
+    def morse_to_char(self, morse: Union[list[str], str]) -> str:
         result = ""
-        morse_symbols = morse.split(DELIMITER)  
-        print(morse_symbols)
-        for sym in morse_symbols:
-            if sym == " ":
-                result += sym
-            elif sym in valid_morse:
+        for sym in morse:
+            if sym in valid_morse:
                 result += char_dict[sym]
+            elif sym == " " and len(result) > 1:
+                result += sym
 
         return result
 
-    def split_morse(self, morse: str) -> str
+
+    def morse_to_bytes(self, morse: Union[list[str], str]) -> bytearray:
+        result = bytearray(len(morse))
+        for symbol in morse:
+            if symbol == " ":
+                result.append(0xFF)  # space character
+            byte = 0x00
+            for unit in symbol:
+                if unit == "-":
+                    byte += 1
+                byte = byte << 1
+
+            result.append(byte)
+
+        return result
+
+
+        
 
     

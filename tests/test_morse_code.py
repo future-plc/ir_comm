@@ -15,13 +15,13 @@ class TestMorse(unittest.TestCase):
         # text should become valid morse
         for c in valid_chars:
             morse_char = self.mt.text_to_morse(c)
-            self.assertEqual(morse_char, morse_dict[c.lower()] + ";")
+            self.assertEqual(morse_char[0], morse_dict[c.lower()] )
         
     def test_invalid_text_to_morse(self):
         for c in string.printable:
             if c.lower() not in list(morse_dict):
                 result = self.mt.text_to_morse(c)
-                self.assertEqual(result, "")
+                self.assertEqual(result, [])
 
     def morse_to_text(self):
         # morse should become valid text
@@ -30,9 +30,19 @@ class TestMorse(unittest.TestCase):
             self.assertEqual(result, char_dict[m])
 
     def test_invalid_morse(self):
-        invalid = "--..--..; ---..----;"
+        invalid = ["--..--.."," ---..----;"]
         result = self.mt.morse_to_char(invalid)
         self.assertEqual(result, "")
+
+    def test_blank_morse(self):
+        blank = ""
+        result_morse = self.mt.morse_to_char(blank)
+        self.assertEqual("", result_morse)
+
+    def test_blank_text(self):
+        blank = ""
+        result_char = self.mt.text_to_morse(blank)
+        self.assertEqual([], result_char)
 
     def test_two_way(self):
         message = "Hello World!"
@@ -41,14 +51,13 @@ class TestMorse(unittest.TestCase):
         self.assertEqual(message.strip(";").lower(), text)
 
     def test_two_way_dirty(self):
-        message = "Hello; World!"
+        message = "Hel;lo; Wor;ld!"
         morse = self.mt.text_to_morse(message)
         text = self.mt.morse_to_char(morse)
-        self.assertEqual(message, text)
+        self.assertEqual("hello world!", text)
 
-    def test_eol(self):
-        pass
-        # catch our custom eol character
+    def test_morse_to_bytes(self):
+        morse = self.mt.text_to_morse("hello world")
+        byte_encoded = self.mt.morse_to_bytes(morse)
 
-    def test_num_words(self):
-        pass
+
