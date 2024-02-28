@@ -1,5 +1,7 @@
 import time
 import io
+import board
+from digitalio import DigitalInOut, Direction, Pull
 try:
     from typing import Union, Optional
 except ImportError:
@@ -16,15 +18,15 @@ def is_raspberrypi():
 if is_raspberrypi():
     import RPi.GPIO as GPIO
 
-TX_GPIO = 8
-RX_GPIO = 9
+TX_GPIO = board.D8
+RX_GPIO = board.D9
 
 HIGH = 1
 LOW = 0
-# unit of "morse" time in ms
-MORSE_UNIT = 200
+# unit of "morse" time in seconds
+MORSE_UNIT = 0.2
 # acceptable error in timing
-MORSE_ERROR = 30
+MORSE_ERROR = 0.03
 
 MESSAGE_MAX_SIZE = 420
 
@@ -38,8 +40,7 @@ class Tranciever():
             **kwargs: 
         """
         self._rx_state = LOW
-        self._txpin: int = tx_pin
-        self._rxpin: int = rx_pin
+        self._init_pins(tx_pin, rx_pin)
         self._prev: float = time.perf_counter()
         self._now: float = time.perf_counter()
         self._send_buf: list[str] = []
@@ -47,30 +48,48 @@ class Tranciever():
         self._symbol_buf: Optional[int] = 0x00
         self._morse_unit = MORSE_UNIT
 
-        if not kwargs.get("mock", False):
-            GPIO.add_event_detect(self._rxpin, GPIO.BOTH)
 
-    def _trancieve(self):
-        if len(self._send_buf) > 1:
-            pass
+    def _init_pins(self, tx: int, rx: int):
+        self._txpin = DigitalInOut(tx)
+        self._txpin.direction = Direction.OUTPUT
+        self._rxpin = DigitalInOut(rx)
+        self._rxpin.direction = Direction.INPUT
+        self._rxpin.pull = Pull.UP
+
+    def update(self):
+        while len(self._send_buf) >= 1:
             # sending mode
+            # toggle gpio according to symbols
+            to_send: str = self._send_buf.pop(0)
+            for symbol in to_send:
+                self._send_bit(symbol)
+            time.sleep(MORSE_UNIT)
 
-        else:
-            pass
-            # recieving mode
 
     def send(self, message: list[str]) -> None:
         self._send_buf = message
 
-    def _send_bit(self):
-        raise NotImplementedError()
+    def _send_bit(self, bit: str) -> None:
+        if bit == "-":
+            self._txpin.value = HIGH
+            time.sleep(MORSE_UNIT * 3)
+        if bit == ".":
+            self._txpin.value = HIGH
+            time.sleep(MORSE_UNIT)
+        if bit == " ":
+            self._txpin.value = LOW
+            time.sleep(MORSE_UNIT * 7)
 
-    def _recieve_bit(self) -> None:
+        self._txpin.value = LOW
+
+    def _recieve_bit(self) -> bool:
         if GPIO.event_detected(self._rxpin):
             bit_time = self.now - self._prev
             self._decode_pulse(bit_time)
             self._rx_state = GPIO.input(self._rxpin)
             self._prev = time.perf_counter()
+            return True
+        return False
 
     @property
     def now(self) -> float:
