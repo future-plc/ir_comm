@@ -24,8 +24,8 @@ class Display():
             self._font = ImageFont.load_default()
 
         self._stdout: str = ""
-        self._linelength = math.floor(self.oled.width / FONT_SIZE)
-        self._lineheight = math.floor(self.oled.height / FONT_SIZE)
+        self._linelength = math.ceil(self.oled.width / FONT_SIZE)
+        self._lineheight = math.ceil(self.oled.height / FONT_SIZE) + 2
 
     def draw(self) -> None:
         """ Update Display """

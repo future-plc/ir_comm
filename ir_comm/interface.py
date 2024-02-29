@@ -3,6 +3,7 @@ import termios
 import select
 import sys
 import board
+import time
 from digitalio import DigitalInOut, Direction, Pull
 from enum import Enum
 from display import Display 
@@ -93,10 +94,27 @@ class Console():
                 self._update_display()
             if self._send_button.state == 0:
                 self.write_send()
+        if self._exit_button.state == 0:
+            self._disp.clear()
+            raise OSError("hard exit lol")
         self._trx.update()
 
     def write_send(self) -> None:
+        self._disp.clear()
+        self._disp.write_lines("Sending Message!")
+        self._disp.draw()
         self._trx.send(self._send_buf)
+        self._flush()
+        time.sleep(0.5)
+        self._disp.clear()
+        self._disp.write_lines("Message sent!")
+        self._disp.draw()
+
+    def _flush(self):
+        self._send_buf = []
+        self._char_idxs = [0]
+        self._cursor = 0
+
 
     def _setcursor(self) -> bool:
         dir = self.read_dpad()
@@ -108,6 +126,8 @@ class Console():
             print("right")
             # cursor right
             self._cursor += 1
+            if self._cursor >= len(self._char_idxs):
+                self._char_idxs.append(0)
         if dir == Dpad.UP:
             print("up")
             # character up
@@ -120,23 +140,9 @@ class Console():
             return True
         return False
 
-    def _setchar(self, char: Optional[str]=None) -> None:
-        if self._char_index > len(self._symbols) - 1:
-            self._char_index = 0
-
-        if self._char_index < 0:
-            self._char_index = len(self._symbols) - 1
-
-        if char:
-            current_char = char
-
-        else:
-            current_char = self._symbols[self._char_index]
-
-        if self._cursor + 1 > len(self._send_buf):
-            self._send_buf.append(current_char)
-        else:
-            self._send_buf[self._cursor] = current_char
+    def _setchar(self) -> None:
+        self._send_buf = [self._symbols[i] for i in self._char_idxs]
+        print(self._send_buf)
 
         
 

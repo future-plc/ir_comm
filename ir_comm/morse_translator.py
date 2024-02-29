@@ -1,5 +1,5 @@
 import time
-from ir_comm.morse_dict import morse_dict, char_dict
+from morse_dict import morse_dict, char_dict
 import string
 valid_chars = list(morse_dict)
 valid_morse = list(char_dict)

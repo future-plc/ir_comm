@@ -1,6 +1,7 @@
 import time
 import io
 import board
+from morse_translator import MorseTranslator
 from digitalio import DigitalInOut, Direction, Pull
 try:
     from typing import Union, Optional
@@ -24,9 +25,9 @@ RX_GPIO = board.D9
 HIGH = 1
 LOW = 0
 # unit of "morse" time in seconds
-MORSE_UNIT = 0.2
+MORSE_UNIT = 0.5
 # acceptable error in timing
-MORSE_ERROR = 0.03
+MORSE_ERROR = 0.13
 
 MESSAGE_MAX_SIZE = 420
 
@@ -47,6 +48,7 @@ class Tranciever():
         self._recieve_buf = bytearray()
         self._symbol_buf: Optional[int] = 0x00
         self._morse_unit = MORSE_UNIT
+        self._translator = MorseTranslator()
 
 
     def _init_pins(self, tx: int, rx: int):
@@ -61,8 +63,13 @@ class Tranciever():
             # sending mode
             # toggle gpio according to symbols
             to_send: str = self._send_buf.pop(0)
+
             for symbol in to_send:
-                self._send_bit(symbol)
+                bits: str = self._translator.text_to_morse(symbol)[0]
+                print(bits)
+                for bit in bits:
+                    print("bit: {}".format(bit))
+                    self._send_bit(bit)
             time.sleep(MORSE_UNIT)
 
 
@@ -71,9 +78,11 @@ class Tranciever():
 
     def _send_bit(self, bit: str) -> None:
         if bit == "-":
+            print("-")
             self._txpin.value = HIGH
             time.sleep(MORSE_UNIT * 3)
         if bit == ".":
+            print(".")
             self._txpin.value = HIGH
             time.sleep(MORSE_UNIT)
         if bit == " ":
