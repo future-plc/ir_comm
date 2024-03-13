@@ -46,7 +46,7 @@ class Tranciever():
         self._now: float = time.perf_counter()
         self._send_buf: list[str] = []
         self._recieve_buf = []
-        self._symbol_buf: Optional[int] = ""
+        self._symbol_buf: str = ""
         self._morse_unit = MORSE_UNIT
         self._translator = MorseTranslator()
 
@@ -90,17 +90,30 @@ class Tranciever():
             return True
         return False
 
+    def get_message(self) -> Optional[str]:
+        """ Attempt to translate what's been recieved and return it """
+        recieved = ""
+        for i in self._recieve_buf:
+            try:
+                c = self._translator.morse_to_char(i)
+                recieved += c
+            except KeyError:
+                # couldnt translate symbol, skip it
+                continue
+        if len(recieved) > 0:
+            return recieved
+        else:
+            return None
+
         
     def send(self, message: list[str]) -> None:
         self._send_buf = message
 
     def _send_bit(self, bit: str) -> None:
         if bit == "-":
-            print("-")
             self._txpin.value = HIGH
             time.sleep(MORSE_UNIT * 3)
         if bit == ".":
-            print(".")
             self._txpin.value = HIGH
             time.sleep(MORSE_UNIT)
         if bit == " ":
@@ -118,47 +131,34 @@ class Tranciever():
     def _decode_pulse(self, pulse_time: float, error=MORSE_ERROR, **kwargs) -> None:
         min_pulse = MORSE_UNIT - error
         max_pulse = MORSE_UNIT + error
-        # convert to float ms
         flag = kwargs.get("flag", "falling")
         
         if pulse_time > 12 * max_pulse:
-            # it's been too long since message recieved
+            # it's been too long since message recieved, flush the buffer
             self._flush_symbol(clear=True)
-            print("wait")
             return
         if pulse_time > 7 * min_pulse:
             # inter-word space
             self._recieve_buf.append(" ")
-            print("~")
             self._flush_symbol(clear=True)
             return
         if pulse_time > 3 * min_pulse:
             if flag == "falling":
                 # dash
                 self._write_symbol("-")
-                print("-")
             else:
                 # inter-character space
                 self._flush_symbol()
-                print("z")
             return
         if pulse_time < max_pulse and pulse_time > min_pulse:
             # dot
             if flag == "falling":
-                print(".")
                 self._write_symbol(".")
 
-        # if none of those are true, we're still in the intra-character space?
+        # if none of those are true, we're still in the intra-character space
 
     def _write_symbol(self, sym: str):
         self._symbol_buf += sym
-
-    def _write_bit(self, bit: int) -> None:
-        if self._symbol_buf is None:
-            self._symbol_buf = 0x00 | (bit & 0xFF)
-        else:
-            self._symbol_buf = ((self._symbol_buf << 1) | bit & 0xFF) & 0xFF
-
 
     def _flush_symbol(self, clear: bool=False) -> None:
         """
@@ -170,13 +170,13 @@ class Tranciever():
             print(self._recieve_buf)
         self._symbol_buf = ""
 
-    def flush_rx(self) -> bytearray:
+    def flush_rx(self):
         message = self._recieve_buf.copy()
         self._recieve_buf.clear()
         return message
 
     @property
-    def symbol_buffer(self) -> Optional[int]:
+    def symbol_buffer(self) -> str:
         return self._symbol_buf
 
     @property
@@ -185,8 +185,3 @@ class Tranciever():
             return self._send_buf
         else:
             return None
-
-    @property
-    def recieve_buf(self) -> str:
-        pass
-

@@ -4,6 +4,7 @@ import select
 import sys
 import board
 import time
+import logging
 from digitalio import DigitalInOut, Direction, Pull
 from enum import Enum
 from display import Display 
@@ -71,11 +72,15 @@ class Console():
         self._mode = mode
         self._dpad: list[DpadButton] = self._init_dpad()
         self._send_button = Button(board.D5)
-        self._exit_button = Button(board.D6)
+        self._clear_send_button = Button(board.D6)
         self._disp.clear()
+        # list of possible accepted symbols
         self._symbols: str = ascii_uppercase + digits + " "
+        # buffer to store the message to be sent
         self._send_buf: list[str] = []
+        # keeps track of the cursor position
         self._cursor = 0
+        # keeps track of characters by dict index
         self._char_idxs: list[int] = [0]
     
 
@@ -94,12 +99,15 @@ class Console():
             if self._send_button.state == 0:
                 self.write_send()
 
-        if self._exit_button.state == 0:
+        if self._clear_send_button.state == 0:
+            self._flush()
             self._disp.clear()
-            raise OSError("Replace me with proper exit")
+
         if self._trx.update():
             # currently recieving a message
-            self._disp.write_lines("x")
+            msg = self._trx.get_message()
+            if msg is not None:
+                self._disp.write_lines(msg, 4)
 
     def write_send(self) -> None:
         """Send message using tranciever member"""
