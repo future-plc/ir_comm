@@ -1,23 +1,21 @@
 import sys
-import string
+import argparse
 from interface import Console, Mode
-try:
-    from typing import Optional
-except ImportError:
-    pass
-# The only valid characters are A-Z, 0-9, and space
-valid_chars = string.ascii_letters + string.digits + " "
 
-
+parser = argparse.ArgumentParser()
+parser.add_argument("-k", "--keyboard")
 
 def main() -> int:
-    console = Console(Mode.DPAD)
+    args = parser.parse_args()
+    if args.keyboard:
+        mode = Mode.KEYBOARD
+    else:
+        mode = Mode.DPAD
+
+    console = Console(mode)
     while True:
         console.run()
     
-    
-    return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())
