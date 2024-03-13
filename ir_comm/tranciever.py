@@ -29,7 +29,7 @@ MORSE_UNIT = 0.35
 # acceptable error in timing
 MORSE_ERROR = 0.02
 
-MESSAGE_MAX_SIZE = 420
+MESSAGE_MAX_SIZE = 120
 
 class Tranciever():
     def __init__(self, tx_pin=TX_GPIO, rx_pin=RX_GPIO, **kwargs):
@@ -81,7 +81,6 @@ class Tranciever():
         if current_state != self._rx_state:
             bit_time = self.now - self._prev
             if current_state == HIGH:
-            # bit transition
                 self._decode_pulse(bit_time, flag="rising")
             else:
                 self._decode_pulse(bit_time, flag="falling")

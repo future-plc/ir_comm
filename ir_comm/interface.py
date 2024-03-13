@@ -72,7 +72,7 @@ class Console():
         self._mode = mode
         self._dpad: list[DpadButton] = self._init_dpad()
         self._send_button = Button(board.D5)
-        self._clear_send_button = Button(board.D6)
+        self._clear_button = Button(board.D6)
         self._disp.clear()
         # list of possible accepted symbols
         self._symbols: str = ascii_uppercase + digits + " "
@@ -99,8 +99,9 @@ class Console():
             if self._send_button.state == 0:
                 self.write_send()
 
-        if self._clear_send_button.state == 0:
+        if self._clear_button.state == 0:
             self._flush()
+            self._trx.flush_rx()
             self._disp.clear()
 
         if self._trx.update():
