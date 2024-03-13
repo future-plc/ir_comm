@@ -12,7 +12,7 @@ Note, this repository is _NOT_ intended to be linked to the article hosting this
 - [Infrared LED (optional, may increase effective range)](https://www.adafruit.com/product/387)
 - [Socket-to-Socket jumper wire](https://www.adafruit.com/product/3141)
 - [2x20 Pin header extension (stacking header)](https://www.adafruit.com/product/1979)
-- [1k Resistor](https://www.adafruit.com/product/4294)
+- [100k Resistor](https://www.adafruit.com/product/2787)
 
 Note, because this communicator is a two-way device, you will need two of everything if you wish to send messages back-and-forth between two parties.
 
@@ -30,16 +30,17 @@ These tools are optional, but recommended unless you're experienced with setting
 
 ### Assembly Instructions
 Solder the resistor and wires to the infrared photodiode like so:
-# INSERT PHOTO
+<img src="photodiode_schematic.png"></img>
 
-Connect the header included with the LED Driver to the driver. If you purchased a separate 5mm IR LED to increase the range, solder it to the driver like so:
-
+Connect the header included with the LED Driver to the driver.
 
 Connect 3.3V power and ground from the Raspberry Pi computer to both the transmitter (Infrared LED Driver) and the reciever (Infrared photodiode and resistor).
 
-Connect the signal wire (yellow) of the transmitter to GPIO _X_
+Connect the signal wire (yellow) of the transmitter to GPIO 8
 
-Connect the signal wire of the reciever to GPIO _Y_
+Connect the signal wire of the reciever to GPIO 9
+
+See [this page](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html) for more detail on the Raspberry Pi's pins
 
 ### Installation
 - get Raspberry Pi OS running on Pi
