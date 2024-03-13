@@ -87,7 +87,7 @@ Note that "sourcing" this venv does not persist across rebooting or exiting the 
 
 With the program running, any characters recieved will show up on the bottom of the OLED display, or in the terminal while in "keyboard mode".
 
-To send a message in keyboard mode, simply type your message, and hit "Enter" (or "Return") to send the message.
+To send a message in keyboard mode, simply type your message, and it will be sent as you type the characters.
 
 To send a message in the default (joystick) mode, up and down on the joystick will select characters or "space". Right and left will move the cursor. The button labeled "#5" will send the message all at once. The button labeled "#6" will clear the message without sending it.
 
