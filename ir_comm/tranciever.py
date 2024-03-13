@@ -25,9 +25,9 @@ RX_GPIO = board.D9
 HIGH = 1
 LOW = 0
 # unit of "morse" time in seconds
-MORSE_UNIT = 0.5
+MORSE_UNIT = 0.35
 # acceptable error in timing
-MORSE_ERROR = 0.13
+MORSE_ERROR = 0.02
 
 MESSAGE_MAX_SIZE = 420
 
@@ -45,8 +45,8 @@ class Tranciever():
         self._prev: float = time.perf_counter()
         self._now: float = time.perf_counter()
         self._send_buf: list[str] = []
-        self._recieve_buf = bytearray()
-        self._symbol_buf: Optional[int] = 0x00
+        self._recieve_buf = []
+        self._symbol_buf: Optional[int] = ""
         self._morse_unit = MORSE_UNIT
         self._translator = MorseTranslator()
 
@@ -56,23 +56,41 @@ class Tranciever():
         self._txpin.direction = Direction.OUTPUT
         self._rxpin = DigitalInOut(rx)
         self._rxpin.direction = Direction.INPUT
-        self._rxpin.pull = Pull.UP
+        self._rxpin.pull = Pull.DOWN
 
-    def update(self):
+    def update(self) -> bool:
         while len(self._send_buf) >= 1:
             # sending mode
             # toggle gpio according to symbols
             to_send: str = self._send_buf.pop(0)
 
             for symbol in to_send:
-                bits: str = self._translator.text_to_morse(symbol)[0]
-                print(bits)
-                for bit in bits:
-                    print("bit: {}".format(bit))
+                bits: str = self._translator.char_to_morse(symbol)
+                for i, bit in enumerate(bits):
                     self._send_bit(bit)
-            time.sleep(MORSE_UNIT)
+                    if i != len(bits):
+                        time.sleep(MORSE_UNIT)
+                if symbol != " ":
+                    time.sleep(MORSE_UNIT*3)
+            self._send_bit(" ") # end the line with a space so we get last character
+        return self._recieve()
+        
 
+    def _recieve(self) -> bool:
+        current_state = self._rxpin.value
+        if current_state != self._rx_state:
+            bit_time = self.now - self._prev
+            if current_state == HIGH:
+            # bit transition
+                self._decode_pulse(bit_time, flag="rising")
+            else:
+                self._decode_pulse(bit_time, flag="falling")
+            self._rx_state = current_state
+            self._prev = self.now
+            return True
+        return False
 
+        
     def send(self, message: list[str]) -> None:
         self._send_buf = message
 
@@ -91,43 +109,49 @@ class Tranciever():
 
         self._txpin.value = LOW
 
-    def _recieve_bit(self) -> bool:
-        if GPIO.event_detected(self._rxpin):
-            bit_time = self.now - self._prev
-            self._decode_pulse(bit_time)
-            self._rx_state = GPIO.input(self._rxpin)
-            self._prev = time.perf_counter()
-            return True
-        return False
 
     @property
     def now(self) -> float:
         return time.perf_counter()
 
 
-    def _decode_pulse(self, pulse_time: float, error=MORSE_ERROR) -> None:
+    def _decode_pulse(self, pulse_time: float, error=MORSE_ERROR, **kwargs) -> None:
         min_pulse = MORSE_UNIT - error
         max_pulse = MORSE_UNIT + error
         # convert to float ms
+        flag = kwargs.get("flag", "falling")
         
+        if pulse_time > 12 * max_pulse:
+            # it's been too long since message recieved
+            self._flush_symbol(clear=True)
+            print("wait")
+            return
         if pulse_time > 7 * min_pulse:
             # inter-word space
-            self._recieve_buf.append(0xFF)
+            self._recieve_buf.append(" ")
+            print("~")
             self._flush_symbol(clear=True)
             return
         if pulse_time > 3 * min_pulse:
-            if self._rx_state == HIGH:
+            if flag == "falling":
                 # dash
-                self._write_bit(1)
+                self._write_symbol("-")
+                print("-")
             else:
                 # inter-character space
                 self._flush_symbol()
+                print("z")
             return
         if pulse_time < max_pulse and pulse_time > min_pulse:
             # dot
-            self._write_bit(0)
+            if flag == "falling":
+                print(".")
+                self._write_symbol(".")
 
         # if none of those are true, we're still in the intra-character space?
+
+    def _write_symbol(self, sym: str):
+        self._symbol_buf += sym
 
     def _write_bit(self, bit: int) -> None:
         if self._symbol_buf is None:
@@ -143,7 +167,8 @@ class Tranciever():
         """
         if not clear and self._symbol_buf is not None:
             self._recieve_buf.append(self._symbol_buf)
-        self._symbol_buf = None
+            print(self._recieve_buf)
+        self._symbol_buf = ""
 
     def flush_rx(self) -> bytearray:
         message = self._recieve_buf.copy()
@@ -162,6 +187,6 @@ class Tranciever():
             return None
 
     @property
-    def recieve_buf(self) -> bytearray:
-        return self._recieve_buf
+    def recieve_buf(self) -> str:
+        pass
 

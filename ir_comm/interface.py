@@ -8,7 +8,7 @@ from digitalio import DigitalInOut, Direction, Pull
 from enum import Enum
 from display import Display 
 from tranciever import Tranciever
-from typing import Optional, Never
+from typing import Optional
 from string import ascii_uppercase, digits
 
 # maximum printable position at current font size
@@ -68,7 +68,6 @@ class Console():
         self._stdin = StdInReader()
         self._disp = Display()
         self._trx = Tranciever()
-        # needs direct access to buttons!
         self._mode = mode
         self._dpad: list[DpadButton] = self._init_dpad()
         self._send_button = Button(board.D5)
@@ -77,7 +76,6 @@ class Console():
         self._symbols: str = ascii_uppercase + digits + " "
         self._send_buf: list[str] = []
         self._cursor = 0
-        # self._char_index = 0
         self._char_idxs: list[int] = [0]
     
 
@@ -88,18 +86,23 @@ class Console():
             if char is not None and char != "":
                 self._setchar(char)
                 self._cursor += 1
+
         if self._mode == Mode.DPAD:
             if self._setcursor():
                 self._setchar()
                 self._update_display()
             if self._send_button.state == 0:
                 self.write_send()
+
         if self._exit_button.state == 0:
             self._disp.clear()
-            raise OSError("hard exit lol")
-        self._trx.update()
+            raise OSError("Replace me with proper exit")
+        if self._trx.update():
+            # currently recieving a message
+            self._disp.write_lines("x")
 
     def write_send(self) -> None:
+        """Send message using tranciever member"""
         self._disp.clear()
         self._disp.write_lines("Sending Message!")
         self._disp.draw()
@@ -111,12 +114,14 @@ class Console():
         self._disp.draw()
 
     def _flush(self):
+        """Clear buffer and reset cursor"""
         self._send_buf = []
         self._char_idxs = [0]
         self._cursor = 0
 
 
     def _setcursor(self) -> bool:
+        """Set the position of the cursor and select characters"""
         dir = self.read_dpad()
         if dir == Dpad.LEFT and self._cursor > 0:
             # cursor left
@@ -140,25 +145,30 @@ class Console():
             return True
         return False
 
-    def _setchar(self) -> None:
+    def _setchar(self, char: Optional[str]=None) -> None:
+        """Convert char index to actual symbols"""
+        if char:
+            self._send_buf.append(char)
         self._send_buf = [self._symbols[i] for i in self._char_idxs]
-        print(self._send_buf)
 
         
-
     def _update_display(self):
         text = ''.join(self._send_buf)
         self._disp.clear()
+        self._disp.set_cursor(self._cursor)
         self._disp.write_lines(text)
         self._disp.draw()
 
     def read_dpad(self) -> Dpad:
+        """Check Dpad buttons, return state of any active ones"""
         for i in self._dpad:
+            # if button LOW, return that state
             if i.direction != Dpad.VOID:
                 return i.direction
         return Dpad.VOID
 
     def _init_dpad(self) -> list[DpadButton]:
+        """Initialize Dpad button array"""
         dpad = []
         directions = [Dpad.UP, Dpad.DOWN, Dpad.LEFT, Dpad.RIGHT]
         i = 0
@@ -171,6 +181,7 @@ class Console():
 
 
 class StdInReader():
+    """ This changes terminal modes and gets keypresses one by one from stdin """
     def __init__(self):
         self._fd = sys.stdin.fileno()
         self._old_settings = termios.tcgetattr(self._fd)

@@ -19,7 +19,7 @@ class MorseTranslator():
             char = char.lower()
             if char in valid_chars:
                 result.append(morse_dict[char])
-            elif char == " " or char == "\n" and len(result) > 1:
+            elif char == " " or char == "\n":
                 result.append(char)
 
         if len(result) == 0:
@@ -27,6 +27,10 @@ class MorseTranslator():
         if result[0] in string.whitespace and len(result) == 1:
             result = []
         return result
+
+    def char_to_morse(self, char: str) -> str:
+        char = char.lower()
+        return morse_dict[char]
 
     def morse_to_char(self, morse: Union[list[str], str]) -> str:
         result = ""

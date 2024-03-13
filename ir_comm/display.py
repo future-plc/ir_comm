@@ -5,7 +5,7 @@ import adafruit_ssd1306
 import os
 import board
 
-FONT_SIZE = 10
+FONT_SIZE = 12
 # Create the I2C interface.
 i2c = busio.I2C(board.SCL, board.SDA)
 
@@ -17,18 +17,20 @@ class Display():
         height: int = self.oled.height
         self.image = Image.new("1", (width, height))
         self.imgbuf  = ImageDraw.Draw(self.image)
-        maybe_font = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        maybe_font = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
         if os.path.exists(maybe_font):
             self._font = ImageFont.truetype(maybe_font, FONT_SIZE)
         else:
             self._font = ImageFont.load_default()
 
         self._stdout: str = ""
-        self._linelength = math.ceil(self.oled.width / FONT_SIZE)
-        self._lineheight = math.ceil(self.oled.height / FONT_SIZE) + 2
+        self._linelength = 17
+        self._linespace = 5
+        self._lineheight = math.ceil(self.oled.height / FONT_SIZE) + 7
 
     def draw(self) -> None:
         """ Update Display """
+        print("drawcall")
         self.oled.image(self.image)
         self.oled.show()
 
@@ -47,6 +49,17 @@ class Display():
         """ Write a text prompt to the buffer """
         self.imgbuf.text(position, text=prompt, font=self._font, fill=255)
         self.draw()
+
+    def set_cursor(self, char: int=0) -> None:
+        """ Place a cursor at <line><char> """
+        target_char = (char * round((self.oled.width/self._linelength))) % self.oled.width
+        target_line = math.floor(char / self._linelength)
+        self.imgbuf.text(
+                (target_char, target_line),
+                text="_",
+                font=self._font,
+                fill=255
+                )
 
     def write_lines(self, text: str, offset: int=0) -> None:
         numlines = math.ceil(len(text) / self._lineheight)
