@@ -29,8 +29,11 @@ These tools are optional, but recommended unless you're experienced with setting
 - Keyboard + Mouse
 
 ### Assembly Instructions
-Solder wires to the infrared photodiode like so:
+Solder the resistor and wires to the infrared photodiode like so:
 # INSERT PHOTO
+
+Connect the header included with the LED Driver to the driver. If you purchased a separate 5mm IR LED to increase the range, solder it to the driver like so:
+
 
 Connect 3.3V power and ground from the Raspberry Pi computer to both the transmitter (Infrared LED Driver) and the reciever (Infrared photodiode and resistor).
 
