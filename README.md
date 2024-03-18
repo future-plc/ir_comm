@@ -1,7 +1,5 @@
 ## Raspberry Pi Infrared Morse Code Communicator
 
-Note, this repository is _NOT_ intended to be linked to the article hosting this project. Please replace the link in "Installing IR Communicator" section with that of the official github repository for this project. This repository will be made _private_ upon public release of the related videos.
-
 ### Parts List
 - [Raspberry Pi](https://www.adafruit.com/product/4292)
 - [Power Supply](https://www.adafruit.com/product/4298)
@@ -68,7 +66,7 @@ If you are using the display listed in the parts list, follow Adafruit's instruc
 #### Installing The IR Communicator
 Change directory to home, and clone the project using git.
 - `cd ~`
-- `git clone <link_to_project>` _REPLACE ME WITH ACTUAL PROJECT LINK!!!_
+- `git clone https://github.com/future-plc/ir_comm.git`
 - `cd ./<project_dir>`
 
 We make a python virtual environment so that we don't accidentally mess up other system-wide python dependencies.
